@@ -1,0 +1,12 @@
+pandas
+ipykernel
+pyodbc
+ensure
+requests
+seaborn
+matplotlib
+xlrd>=2.0.1
+scikit-learn
+python-box
+PyYAML
+-e .
