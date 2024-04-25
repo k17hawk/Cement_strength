@@ -8,7 +8,6 @@ from strength.exception import StrengthException
 from strength.logger import  logging
 from strength.entity.artifact_entity import DataIngestionArtifact
 import tarfile
-import shutil
 import numpy as np
 from six.moves import urllib
 import pandas as pd
@@ -48,22 +47,23 @@ class DataIngestion:
         except Exception as e:
             raise StrengthException(e,sys) from e
 
-    def extract_zip_file(self, tgz_file_path: str):
+    def extract_tgz_file(self,tgz_file_path:str):
         try:
             raw_data_dir = self.data_ingestion_config.raw_data_dir
 
             if os.path.exists(raw_data_dir):
-                shutil.rmtree(raw_data_dir)
+                os.remove(raw_data_dir)
 
-            os.makedirs(raw_data_dir, exist_ok=True)
+            os.makedirs(raw_data_dir,exist_ok=True)
 
-            logging.info(f"Extracting zip file: [{tgz_file_path}] into dir: [{raw_data_dir}]")
-            shutil.unpack_archive(tgz_file_path, raw_data_dir, 'zip')
+            logging.info(f"Extracting tgz file: [{tgz_file_path}] into dir: [{raw_data_dir}]")
+            with tarfile.open(tgz_file_path,'r:gz') as cement__zip_obj:
+                extraction_filter = (lambda member: True)  
+                cement__zip_obj.extractall(path=raw_data_dir, filter=extraction_filter)
             logging.info(f"Extraction completed")
 
         except Exception as e:
-            raise StrengthException(e, sys) from e
-
+            raise StrengthException(e,sys) from e
     
     def split_data_as_train_test(self) -> DataIngestionArtifact:
         try:
@@ -75,7 +75,7 @@ class DataIngestion:
 
 
             logging.info(f"Reading csv file: [{cement_file_path}]")
-            cement_data_frame = pd.read_excel(cement_file_path)
+            cement_data_frame = pd.read_csv(cement_file_path)
             
 
             logging.info(f"Splitting data into train and test")
@@ -114,8 +114,8 @@ class DataIngestion:
     def initiate_data_ingestion(self)-> DataIngestionArtifact:
         try:
             tgz_file_path =  self.download_cement_data()
-            return self.extract_zip_file(tgz_file_path=tgz_file_path)
-            # return self.split_data_as_train_test()
+            self.extract_tgz_file(tgz_file_path=tgz_file_path)
+            return self.split_data_as_train_test()
         except Exception as e:
             raise StrengthException(e,sys) from e
     
